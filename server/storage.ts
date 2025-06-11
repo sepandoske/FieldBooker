@@ -1,5 +1,6 @@
 import { bookings, type Booking, type InsertBooking } from "@shared/schema";
-import { adminDb } from "./firebase-admin";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, Timestamp } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
 
 export interface IStorage {
   getBooking(id: number): Promise<Booking | undefined>;
@@ -15,21 +16,26 @@ export interface IStorage {
   }>;
 }
 
+// Initialize Firebase Web SDK for server use
+const firebaseConfig = {
+  apiKey: "AIzaSyDMTSXaaqY4ays1OAC-efn9mBMGYu7mgI0",
+  authDomain: "mini-football-booking.firebaseapp.com",
+  projectId: "mini-football-booking",
+  storageBucket: "mini-football-booking.firebasestorage.app",
+  messagingSenderId: "182950461789",
+  appId: "1:182950461789:web:c554cb9023d5f522c6a8b4",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 export class FirebaseStorage implements IStorage {
   private readonly COLLECTION_NAME = 'bookings';
 
   async getBooking(id: number): Promise<Booking | undefined> {
     try {
-      const doc = await adminDb.collection(this.COLLECTION_NAME).doc(id.toString()).get();
-      if (!doc.exists) {
-        return undefined;
-      }
-      const data = doc.data()!;
-      return {
-        id: parseInt(doc.id),
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-      } as Booking;
+      const allBookings = await this.getAllBookings();
+      return allBookings.find(booking => booking.id === id);
     } catch (error) {
       console.error('Error getting booking:', error);
       return undefined;
@@ -38,17 +44,20 @@ export class FirebaseStorage implements IStorage {
 
   async getAllBookings(): Promise<Booking[]> {
     try {
-      const snapshot = await adminDb.collection(this.COLLECTION_NAME)
-        .orderBy('createdAt', 'desc')
-        .get();
-      
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
+      const querySnapshot = await getDocs(collection(db, this.COLLECTION_NAME));
+      return querySnapshot.docs.map((docSnap, index) => {
+        const data = docSnap.data();
         return {
-          id: parseInt(doc.id) || Date.now(),
-          ...data,
+          id: index + 1, // Use sequential ID for simplicity
+          customerName: data.customerName || '',
+          customerPhone: data.customerPhone || '',
+          day: data.day || '',
+          date: data.date || '',
+          time: data.time || '',
+          notes: data.notes || null,
+          status: data.status || 'confirmed',
           createdAt: data.createdAt?.toDate() || new Date(),
-        } as Booking;
+        };
       });
     } catch (error) {
       console.error('Error getting all bookings:', error);
@@ -58,19 +67,26 @@ export class FirebaseStorage implements IStorage {
 
   async getBookingsByDay(day: string, date: string): Promise<Booking[]> {
     try {
-      const snapshot = await adminDb.collection(this.COLLECTION_NAME)
-        .where('day', '==', day)
-        .where('date', '==', date)
-        .where('status', '==', 'confirmed')
-        .get();
+      const q = query(
+        collection(db, this.COLLECTION_NAME),
+        where('day', '==', day),
+        where('date', '==', date)
+      );
       
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((docSnap, index) => {
+        const data = docSnap.data();
         return {
-          id: parseInt(doc.id) || Date.now(),
-          ...data,
+          id: index + 1,
+          customerName: data.customerName || '',
+          customerPhone: data.customerPhone || '',
+          day: data.day || '',
+          date: data.date || '',
+          time: data.time || '',
+          notes: data.notes || null,
+          status: data.status || 'confirmed',
           createdAt: data.createdAt?.toDate() || new Date(),
-        } as Booking;
+        };
       });
     } catch (error) {
       console.error('Error getting bookings by day:', error);
@@ -80,22 +96,19 @@ export class FirebaseStorage implements IStorage {
 
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {
     try {
-      const docRef = await adminDb.collection(this.COLLECTION_NAME).add({
+      const bookingData = {
         ...insertBooking,
-        notes: insertBooking.notes || null,
-        status: insertBooking.status || "confirmed",
-        createdAt: new Date(),
-      });
+        status: 'confirmed' as const,
+        createdAt: Timestamp.now(),
+      };
 
+      const docRef = await addDoc(collection(db, this.COLLECTION_NAME), bookingData);
+      console.log('Booking created successfully with ID:', docRef.id);
+      
       const booking: Booking = {
-        id: parseInt(docRef.id) || Date.now(),
-        customerName: insertBooking.customerName,
-        customerPhone: insertBooking.customerPhone,
-        notes: insertBooking.notes || null,
-        day: insertBooking.day,
-        time: insertBooking.time,
-        date: insertBooking.date,
-        status: insertBooking.status || "confirmed",
+        id: Math.floor(Math.random() * 1000000), // Generate random ID
+        ...insertBooking,
+        status: 'confirmed',
         createdAt: new Date(),
       };
 
@@ -108,8 +121,24 @@ export class FirebaseStorage implements IStorage {
 
   async deleteBooking(id: number): Promise<boolean> {
     try {
-      await adminDb.collection(this.COLLECTION_NAME).doc(id.toString()).delete();
-      return true;
+      const querySnapshot = await getDocs(collection(db, this.COLLECTION_NAME));
+      const allBookings = await this.getAllBookings();
+      const targetBooking = allBookings.find(b => b.id === id);
+      
+      if (!targetBooking) return false;
+
+      // Find and delete the matching document
+      for (const docSnapshot of querySnapshot.docs) {
+        const data = docSnapshot.data();
+        if (data.customerName === targetBooking.customerName && 
+            data.customerPhone === targetBooking.customerPhone &&
+            data.date === targetBooking.date &&
+            data.time === targetBooking.time) {
+          await deleteDoc(doc(db, this.COLLECTION_NAME, docSnapshot.id));
+          return true;
+        }
+      }
+      return false;
     } catch (error) {
       console.error('Error deleting booking:', error);
       return false;
@@ -124,26 +153,23 @@ export class FirebaseStorage implements IStorage {
   }> {
     try {
       const allBookings = await this.getAllBookings();
-      const today = new Date().toISOString().split('T')[0];
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
-      const todayBookings = allBookings.filter(b => b.date === today).length;
-      const weekBookings = allBookings.filter(b => new Date(b.createdAt) >= weekAgo).length;
-      
-      // Calculate revenue (assuming 100 SAR per booking)
-      const revenue = weekBookings * 100;
-      
-      // Calculate occupancy (7 days * 8 hours = 56 total slots)
-      const occupancy = Math.round((weekBookings / 56) * 100);
-      
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const todayBookings = allBookings.filter(booking => booking.date === today).length;
+      const weekBookings = allBookings.filter(booking => new Date(booking.date) >= weekAgo).length;
+      const revenue = weekBookings * 100; // 100 SAR per booking
+      const occupancy = Math.min((todayBookings / 8) * 100, 100); // 8 slots per day max
+
       return {
         todayBookings,
         weekBookings,
         revenue,
-        occupancy: Math.min(occupancy, 100),
+        occupancy,
       };
     } catch (error) {
-      console.error('Error getting stats:', error);
+      console.error('Error getting booking stats:', error);
       return {
         todayBookings: 0,
         weekBookings: 0,
@@ -168,31 +194,24 @@ export class MemStorage implements IStorage {
   }
 
   async getAllBookings(): Promise<Booking[]> {
-    return Array.from(this.bookings.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return Array.from(this.bookings.values());
   }
 
   async getBookingsByDay(day: string, date: string): Promise<Booking[]> {
     return Array.from(this.bookings.values()).filter(
-      (booking) => booking.day === day && booking.date === date
+      booking => booking.day === day && booking.date === date
     );
   }
 
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {
-    const id = this.currentId++;
     const booking: Booking = {
-      id,
-      customerName: insertBooking.customerName,
-      customerPhone: insertBooking.customerPhone,
-      notes: insertBooking.notes || null,
-      day: insertBooking.day,
-      time: insertBooking.time,
-      date: insertBooking.date,
-      status: insertBooking.status || "confirmed",
+      id: this.currentId++,
+      ...insertBooking,
+      status: 'confirmed',
       createdAt: new Date(),
     };
-    this.bookings.set(id, booking);
+
+    this.bookings.set(booking.id, booking);
     return booking;
   }
 
@@ -206,31 +225,24 @@ export class MemStorage implements IStorage {
     revenue: number;
     occupancy: number;
   }> {
-    const today = new Date().toISOString().split('T')[0];
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    
-    const allBookings = Array.from(this.bookings.values());
-    const todayBookings = allBookings.filter(b => b.date === today).length;
-    const weekBookings = allBookings.filter(b => new Date(b.createdAt) >= weekAgo).length;
-    
-    // Calculate revenue (assuming 100 SAR per booking)
-    const revenue = weekBookings * 100;
-    
-    // Calculate occupancy (7 days * 8 hours = 56 total slots)
-    const occupancy = Math.round((weekBookings / 56) * 100);
-    
+    const bookings = Array.from(this.bookings.values());
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const todayBookings = bookings.filter(booking => booking.date === today).length;
+    const weekBookings = bookings.filter(booking => new Date(booking.date) >= weekAgo).length;
+    const revenue = weekBookings * 100; // 100 SAR per booking
+    const occupancy = Math.min((todayBookings / 8) * 100, 100); // 8 slots per day max
+
     return {
       todayBookings,
       weekBookings,
       revenue,
-      occupancy: Math.min(occupancy, 100),
+      occupancy,
     };
   }
 }
 
-// Switch between Firebase and Memory storage
-// For production, use FirebaseStorage with proper Firebase credentials
-// For development/testing, use MemStorage
-
-// Force Firebase usage regardless of environment variable
+// Use Firebase storage directly
 export const storage = new FirebaseStorage();

@@ -1,31 +1,25 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import * as path from 'path';
 
 // Initialize Firebase Admin
 let app;
 if (getApps().length === 0) {
   try {
-    // Try to use service account key if available
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY 
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-      : null;
+    // Use service account file
+    const serviceAccountPath = path.join(process.cwd(), 'server', 'firebase-service-account.json');
     
-    if (serviceAccount) {
-      app = initializeApp({
-        credential: cert(serviceAccount),
-        projectId: serviceAccount.project_id,
-      });
-    } else {
-      // Fallback to default credentials
-      app = initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || 'mini-football-booking',
-      });
-    }
+    app = initializeApp({
+      credential: cert(serviceAccountPath),
+      projectId: 'mini-football-booking',
+    });
+    
+    console.log('Firebase Admin initialized successfully with service account');
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
     // Fallback to default credentials
     app = initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID || 'mini-football-booking',
+      projectId: 'mini-football-booking',
     });
   }
 } else {
