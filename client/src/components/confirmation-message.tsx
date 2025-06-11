@@ -43,7 +43,7 @@ export default function ConfirmationMessage({ booking, onNewBooking }: Confirmat
 
   return (
     <Card className="p-8 text-center">
-      <div className="w-20 h-20 bg-success rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
         <CheckCircle className="text-white text-3xl w-12 h-12" />
       </div>
       
