@@ -1,6 +1,5 @@
-// Firebase configuration placeholder
-// In a real implementation, you would configure Firebase here
-// This file is prepared for future Firebase integration
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 export interface FirebaseConfig {
   apiKey: string;
@@ -12,21 +11,32 @@ export interface FirebaseConfig {
   appId: string;
 }
 
-// For now, we're using the Express backend with in-memory storage
-// Firebase integration can be added here when needed
 export const firebaseConfig: FirebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  databaseURL: process.env.VITE_FIREBASE_DATABASE_URL || "",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: process.env.VITE_FIREBASE_APP_ID || "",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
 };
 
-// Firebase initialization would go here
-// import { initializeApp } from 'firebase/app';
-// import { getFirestore } from 'firebase/firestore';
-// 
-// const app = initializeApp(firebaseConfig);
-// export const db = getFirestore(app);
+// Initialize Firebase
+let app;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
+}
+
+// Initialize Firestore
+export const db = getFirestore(app);
+
+// For development: connect to Firestore emulator if running locally
+if (import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+  try {
+    connectFirestoreEmulator(db, 'localhost', 8080);
+  } catch (error) {
+    console.log('Firestore emulator already connected or not available');
+  }
+}
