@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -12,39 +13,47 @@ function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">جاري التحميل...</p>
-        </div>
-      </div>
+    return React.createElement(
+      "div",
+      { className: "min-h-screen flex items-center justify-center" },
+      React.createElement(
+        "div",
+        { className: "text-center" },
+        React.createElement("div", { 
+          className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" 
+        }),
+        React.createElement("p", { className: "mt-2 text-gray-600" }, "جاري التحميل...")
+      )
     );
   }
 
   if (!isAuthenticated) {
-    return <Login />;
+    return React.createElement(Login);
   }
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/admin" component={Admin} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      <Footer />
-    </div>
+  return React.createElement(
+    "div",
+    { className: "min-h-screen flex flex-col" },
+    React.createElement(
+      "main",
+      { className: "flex-1" },
+      React.createElement(
+        Switch,
+        null,
+        React.createElement(Route, { path: "/", component: Home }),
+        React.createElement(Route, { path: "/admin", component: Admin }),
+        React.createElement(Route, { component: NotFound })
+      )
+    ),
+    React.createElement(Footer)
   );
 }
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Router />
-    </QueryClientProvider>
+  return React.createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    React.createElement(Router)
   );
 }
 
