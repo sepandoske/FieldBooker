@@ -45,7 +45,7 @@ export class WhatsAppService {
 ${booking.notes ? `📝 ملاحظات: ${booking.notes}` : ''}
 
 ✅ حالة الحجز: مؤكد
-💰 المبلغ: 100 ريال`;
+💰 المبلغ: 7,000 دينار عراقي`;
   }
 
   private getDayNameArabic(day: string): string {

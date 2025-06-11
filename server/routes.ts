@@ -1,13 +1,68 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertBookingSchema } from "@shared/schema";
+import { storage } from "./database-storage";
+import { insertBookingSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 import { whatsappService } from "./whatsapp-service";
+import { loginUser, authenticateToken, getCurrentUser } from "./simple-auth";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get all bookings
-  app.get("/api/bookings", async (req, res) => {
+  // Security middleware
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  }));
+
+  // Rate limiting for security
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // limit each IP to 5 requests per windowMs
+    message: { message: "محاولات تسجيل دخول كثيرة، حاول مرة أخرى لاحقاً" },
+  });
+
+  const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { message: "طلبات كثيرة، حاول مرة أخرى لاحقاً" },
+  });
+
+  app.use("/api/auth", authLimiter);
+  app.use("/api", generalLimiter);
+
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const validatedData = loginSchema.parse(req.body);
+      const result = await loginUser(validatedData.username, validatedData.password);
+      
+      if (result) {
+        res.json({ token: result.token, user: { id: result.user.id, username: result.user.username, role: result.user.role } });
+      } else {
+        res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صحيحة", errors: error.errors });
+      }
+      res.status(500).json({ message: "خطأ في الخادم" });
+    }
+  });
+
+  app.get("/api/auth/me", authenticateToken, (req, res) => {
+    const user = (req as any).user;
+    res.json({ id: user.userId, username: user.username, role: user.role });
+  });
+
+  // Protected routes
+  app.get("/api/bookings", authenticateToken, async (req, res) => {
     try {
       const bookings = await storage.getAllBookings();
       res.json(bookings);
