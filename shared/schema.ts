@@ -23,7 +23,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   day: z.string().min(1, "يرجى اختيار اليوم"),
   time: z.string().min(1, "يرجى اختيار الوقت"),
   date: z.string().min(1, "تاريخ غير صحيح"),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional(),
   status: z.string().default("confirmed"),
 });
 

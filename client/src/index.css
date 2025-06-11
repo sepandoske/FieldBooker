@@ -81,23 +81,23 @@
 
 /* Custom Arabic RTL styles */
 .btn-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  @apply bg-primary text-primary-foreground hover:opacity-90;
 }
 
 .btn-secondary {
-  @apply bg-secondary text-secondary-foreground hover:bg-secondary/90;
+  @apply bg-secondary text-secondary-foreground hover:opacity-90;
 }
 
 .btn-success {
-  @apply bg-success text-success-foreground hover:bg-success/90;
+  @apply bg-green-600 text-white hover:opacity-90;
 }
 
 .btn-warning {
-  @apply bg-warning text-warning-foreground hover:bg-warning/90;
+  @apply bg-yellow-500 text-white hover:opacity-90;
 }
 
 .btn-destructive {
-  @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+  @apply bg-red-600 text-white hover:opacity-90;
 }
 
 /* Time slot states */
@@ -115,13 +115,13 @@
 
 /* Status badges */
 .status-confirmed {
-  @apply bg-success text-success-foreground;
+  @apply bg-green-600 text-white;
 }
 
 .status-pending {
-  @apply bg-warning text-warning-foreground;
+  @apply bg-yellow-500 text-white;
 }
 
 .status-cancelled {
-  @apply bg-destructive text-destructive-foreground;
+  @apply bg-red-600 text-white;
 }
