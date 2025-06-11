@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBookingSchema } from "@shared/schema";
 import { z } from "zod";
+import { whatsappService } from "./whatsapp-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all bookings
@@ -42,6 +43,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const booking = await storage.createBooking(validatedData);
+      
+      // Send WhatsApp notification
+      whatsappService.sendBookingNotification(booking).catch(error => {
+        console.error('Failed to send WhatsApp notification:', error);
+      });
+      
       res.status(201).json(booking);
     } catch (error) {
       if (error instanceof z.ZodError) {
