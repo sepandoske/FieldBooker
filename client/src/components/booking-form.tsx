@@ -171,7 +171,7 @@ export default function BookingForm({
           </div>
           <div>
             <span className="text-gray-600">السعر:</span>
-            <span className="font-semibold mr-2 text-primary">100 ريال</span>
+            <span className="font-semibold mr-2 text-primary">7,000 دينار عراقي</span>
           </div>
         </div>
       </div>

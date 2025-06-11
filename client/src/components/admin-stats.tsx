@@ -26,10 +26,13 @@ export default function AdminStats() {
     );
   }
 
+  const defaultStats = { todayBookings: 0, weekBookings: 0, revenue: 0, occupancy: 0 };
+  const currentStats = stats || defaultStats;
+
   const statsData = [
     {
       title: "حجوزات اليوم",
-      value: stats?.todayBookings || 0,
+      value: currentStats.todayBookings,
       icon: Calendar,
       bgColor: "bg-primary/5",
       borderColor: "border-primary/20",
@@ -38,7 +41,7 @@ export default function AdminStats() {
     },
     {
       title: "حجوزات الأسبوع",
-      value: stats?.weekBookings || 0,
+      value: currentStats.weekBookings,
       icon: TrendingUp,
       bgColor: "bg-secondary/5",
       borderColor: "border-secondary/20",
@@ -47,7 +50,7 @@ export default function AdminStats() {
     },
     {
       title: "إيرادات الأسبوع",
-      value: stats?.revenue || 0,
+      value: `${(currentStats.revenue).toLocaleString()} د.ع`,
       icon: DollarSign,
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
@@ -56,7 +59,7 @@ export default function AdminStats() {
     },
     {
       title: "معدل الإشغال",
-      value: `${stats?.occupancy || 0}%`,
+      value: `${currentStats.occupancy}%`,
       icon: Percent,
       bgColor: "bg-yellow-50",
       borderColor: "border-yellow-200",

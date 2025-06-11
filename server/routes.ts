@@ -82,8 +82,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get booking statistics
+  app.get("/api/stats", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getBookingStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ message: "خطأ في جلب الإحصائيات" });
+    }
+  });
+
   // Create a new booking
-  app.post("/api/bookings", async (req, res) => {
+  app.post("/api/bookings", authenticateToken, async (req, res) => {
     try {
       const validatedData = insertBookingSchema.parse(req.body);
       
