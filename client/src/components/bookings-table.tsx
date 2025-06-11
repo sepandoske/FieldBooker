@@ -17,7 +17,6 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Booking } from "@shared/schema";
 
 export default function BookingsTable() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
@@ -32,17 +31,10 @@ export default function BookingsTable() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
-      toast({
-        title: "تم حذف الحجز بنجاح",
-        description: "تم حذف الحجز من النظام",
-      });
+      alert("تم حذف الحجز بنجاح");
     },
     onError: (error: any) => {
-      toast({
-        title: "فشل في حذف الحجز",
-        description: error.message || "حدث خطأ أثناء حذف الحجز",
-        variant: "destructive",
-      });
+      alert("فشل في حذف الحجز: " + (error.message || "حدث خطأ أثناء حذف الحجز"));
     },
   });
 
