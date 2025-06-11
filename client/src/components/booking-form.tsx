@@ -68,10 +68,10 @@ export default function BookingForm({
       newErrors.customerName = "يرجى إدخال الاسم الكامل";
     }
 
-    // Accept Saudi numbers (05xxxxxxxx) or international format (+966xxxxxxxxx)
-    const phoneRegex = /^(05[0-9]{8}|(\+966|966)?5[0-9]{8})$/;
+    // Accept Iraqi numbers (07xxxxxxxx) or international format (+964xxxxxxxxx)
+    const phoneRegex = /^(07[3-9][0-9]{8}|(\+964|964)?7[3-9][0-9]{8})$/;
     if (!formData.customerPhone || !phoneRegex.test(formData.customerPhone.replace(/\s+/g, ''))) {
-      newErrors.customerPhone = "يرجى إدخال رقم هاتف صحيح (05xxxxxxxx أو +966xxxxxxxxx)";
+      newErrors.customerPhone = "يرجى إدخال رقم هاتف عراقي صحيح (07xxxxxxxx أو +964xxxxxxxxx)";
     }
 
     if (!formData.terms) {

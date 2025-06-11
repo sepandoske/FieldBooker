@@ -71,6 +71,10 @@ export default function ConfirmationMessage({ booking, onNewBooking }: Confirmat
             <span className="font-semibold">الوقت:</span>
             <span className="mr-2">{formatTime(booking.time)}</span>
           </div>
+          <div>
+            <span className="font-semibold">المبلغ:</span>
+            <span className="mr-2 text-green-600 font-bold">7,000 دينار عراقي</span>
+          </div>
         </div>
       </div>
       
