@@ -232,6 +232,5 @@ export class MemStorage implements IStorage {
 // For production, use FirebaseStorage with proper Firebase credentials
 // For development/testing, use MemStorage
 
-const USE_FIREBASE = process.env.USE_FIREBASE === 'true';
-
-export const storage = USE_FIREBASE ? new FirebaseStorage() : new MemStorage();
+// Force Firebase usage regardless of environment variable
+export const storage = new FirebaseStorage();
