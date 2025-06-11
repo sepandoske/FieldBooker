@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { UserPen, Check, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-simple-toast";
+
 import { apiRequest } from "@/lib/queryClient";
 import type { Booking } from "@shared/schema";
 
@@ -32,7 +32,6 @@ export default function BookingForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createBookingMutation = useMutation({
@@ -45,19 +44,12 @@ export default function BookingForm({
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/bookings/day'] });
       
-      toast({
-        title: "تم تأكيد الحجز بنجاح!",
-        description: "ستتلقى رسالة تأكيد على رقم الهاتف المسجل.",
-      });
+      alert("تم تأكيد الحجز بنجاح! ستتلقى رسالة تأكيد على رقم الهاتف المسجل.");
       
       onBookingConfirmed(booking);
     },
     onError: (error: any) => {
-      toast({
-        title: "فشل في إنشاء الحجز",
-        description: error.message || "حدث خطأ أثناء معالجة طلبك",
-        variant: "destructive",
-      });
+      alert("فشل في إنشاء الحجز: " + (error.message || "حدث خطأ أثناء معالجة طلبك"));
     },
   });
 
