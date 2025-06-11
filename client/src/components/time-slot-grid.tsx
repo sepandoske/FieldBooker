@@ -27,15 +27,31 @@ export default function TimeSlotGrid({
     queryKey: ['/api/bookings/day', selectedDay, selectedDate],
   });
 
-  // Generate time slots from 4 PM to 11 PM
+  // Generate time slots from 3 PM to 2 AM
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = [];
-    const bookedTimes = new Set(bookings?.map((b: any) => b.time) || []);
+    const bookedTimes = new Set((bookings as any[])?.map((b: any) => b.time) || []);
 
-    for (let hour = 16; hour <= 22; hour++) {
+    // 3 PM to 11 PM (15:00 to 23:00)
+    for (let hour = 15; hour <= 23; hour++) {
       const time = `${hour}:00`;
       const displayHour = hour > 12 ? hour - 12 : hour;
-      const period = hour >= 12 ? 'م' : 'ص';
+      const period = 'م';
+      const display = `${displayHour}:00 ${period}`;
+
+      slots.push({
+        time,
+        display,
+        status: bookedTimes.has(time) ? 'booked' : 
+                selectedTime === time ? 'selected' : 'available'
+      });
+    }
+
+    // 12 AM to 2 AM (00:00 to 02:00)
+    for (let hour = 0; hour <= 2; hour++) {
+      const time = `${hour.toString().padStart(2, '0')}:00`;
+      const displayHour = hour === 0 ? 12 : hour;
+      const period = 'ص';
       const display = `${displayHour}:00 ${period}`;
 
       let status: 'available' | 'selected' | 'booked' = 'available';
@@ -98,15 +114,17 @@ export default function TimeSlotGrid({
   };
 
   const getSlotClasses = (status: string) => {
+    const baseClasses = "w-full p-4 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center gap-2 min-h-[100px]";
+    
     switch (status) {
       case 'available':
-        return 'time-slot-available';
+        return `${baseClasses} border-green-300 bg-green-50 hover:bg-green-100 text-green-800 cursor-pointer dark:border-green-600 dark:bg-green-900/20 dark:text-green-300 dark:hover:bg-green-800/30`;
       case 'selected':
-        return 'time-slot-selected';
+        return `${baseClasses} border-blue-500 bg-blue-100 text-blue-800 cursor-pointer dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300`;
       case 'booked':
-        return 'time-slot-booked';
+        return `${baseClasses} border-red-500 bg-red-100 text-red-800 cursor-not-allowed opacity-75 dark:border-red-400 dark:bg-red-900/30 dark:text-red-300`;
       default:
-        return '';
+        return baseClasses;
     }
   };
 
@@ -125,21 +143,19 @@ export default function TimeSlotGrid({
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         {timeSlots.map((slot) => (
-          <Button
+          <div
             key={slot.time}
-            variant="outline"
-            className={`p-4 h-auto ${getSlotClasses(slot.status)}`}
+            className={getSlotClasses(slot.status)}
             onClick={() => handleTimeClick(slot.time, slot.status)}
-            disabled={slot.status === 'booked'}
           >
             <div className="text-center">
               <div className="text-lg font-semibold">{slot.display}</div>
-              <div className="text-sm">{getSlotText(slot.status)}</div>
-              <div className="text-xs mt-1">
+              <div className="text-sm font-medium">{getSlotText(slot.status)}</div>
+              <div className="mt-2">
                 {getSlotIcon(slot.status)}
               </div>
             </div>
-          </Button>
+          </div>
         ))}
       </div>
 
