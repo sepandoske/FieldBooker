@@ -1,14 +1,22 @@
 {
-  "name": "rest-express",
+  "name": "field-booker-kurdistan",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "description": "نظام حجز ملاعب كرة القدم المصغرة - كردستان",
+  "author": "sepan_b_ahmad",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm install && npm run build",
+    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
