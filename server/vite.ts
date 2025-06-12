@@ -46,7 +46,7 @@ export async function setupVite(app: Express, server: Server) {
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        import.meta.dirname || __dirname || process.cwd(),
         "..",
         "client",
         "index.html",
@@ -68,18 +68,67 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // Try multiple possible paths for the built client
+  const baseDir = import.meta.dirname || __dirname || process.cwd();
+  const possiblePaths = [
+    path.resolve(baseDir, "..", "client", "dist"),
+    path.resolve(baseDir, "public"),
+    path.resolve(baseDir, "dist", "client"),
+    path.resolve(process.cwd(), "client", "dist"),
+    path.resolve(process.cwd(), "dist", "client"),
+    path.resolve(process.cwd(), "public"),
+  ];
 
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+  let distPath: string | null = null;
+
+  for (const possiblePath of possiblePaths) {
+    if (fs.existsSync(possiblePath)) {
+      distPath = possiblePath;
+      console.log(`✅ Found client build at: ${distPath}`);
+      break;
+    } else {
+      console.log(`❌ Not found: ${possiblePath}`);
+    }
+  }
+
+  if (!distPath) {
+    console.error("❌ Could not find client build directory in any of these locations:");
+    possiblePaths.forEach(p => console.error(`   - ${p}`));
+
+    // Fallback: serve a simple message
+    app.use("*", (_req, res) => {
+      res.status(200).send(`
+        <html>
+          <body>
+            <h1>🚀 Server is running!</h1>
+            <p>Client build not found, but server is working.</p>
+            <p>Build paths checked:</p>
+            <ul>
+              ${possiblePaths.map(p => `<li>${p}</li>`).join('')}
+            </ul>
+          </body>
+        </html>
+      `);
+    });
+    return;
   }
 
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    const indexPath = path.resolve(distPath!, "index.html");
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send(`
+        <html>
+          <body>
+            <h1>❌ index.html not found</h1>
+            <p>Looking for: ${indexPath}</p>
+          </body>
+        </html>
+      `);
+    }
   });
 }
